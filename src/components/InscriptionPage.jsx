@@ -106,7 +106,7 @@ export default function InscriptionPage({ navigate }) {
                 disabled={loading}
                 autoComplete="off"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:bg-gray-100"
-                placeholder="Jean Dupont"
+                
               />
             </div>
 
@@ -122,7 +122,7 @@ export default function InscriptionPage({ navigate }) {
                 disabled={loading}
                 autoComplete="off"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:bg-gray-100"
-                placeholder="jean.dupont@email.com"
+               
               />
             </div>
           </div>
@@ -141,7 +141,7 @@ export default function InscriptionPage({ navigate }) {
                 autoComplete="off"
                 maxLength="11"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:bg-gray-100"
-                placeholder="01234567890"
+               
               />
             </div>
 
@@ -157,7 +157,7 @@ export default function InscriptionPage({ navigate }) {
                 disabled={loading}
                 autoComplete="off"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:bg-gray-100"
-                placeholder="+33 6 12 34 56 78"
+                
               />
             </div>
           </div>
@@ -175,7 +175,7 @@ export default function InscriptionPage({ navigate }) {
                 disabled={loading}
                 autoComplete="off"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:bg-gray-100"
-                placeholder="France"
+               
               />
             </div>
 
@@ -191,7 +191,7 @@ export default function InscriptionPage({ navigate }) {
                 disabled={loading}
                 autoComplete="off"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:bg-gray-100"
-                placeholder="Paris"
+                
               />
             </div>
           </div>
@@ -209,7 +209,7 @@ export default function InscriptionPage({ navigate }) {
                 disabled={loading}
                 autoComplete="new-password"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:bg-gray-100"
-                placeholder="Minimum 6 chiffres"
+                
               />
             </div>
 
@@ -225,16 +225,12 @@ export default function InscriptionPage({ navigate }) {
                 disabled={loading}
                 autoComplete="new-password"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:bg-gray-100"
-                placeholder="Confirmez votre code secret"
+               
               />
             </div>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-xs text-blue-700">
-              <strong>Note :</strong> Votre identifiant doit contenir exactement 11 chiffres et votre code secret doit contenir uniquement des chiffres (minimum 6).
-            </p>
-          </div>
+        
 
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
             <p className="text-xs text-gray-600">

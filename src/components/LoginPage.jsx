@@ -95,8 +95,6 @@ export default function LoginPage({ navigate }) {
           </div>
         )}
 
-       
-
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -127,12 +125,10 @@ export default function LoginPage({ navigate }) {
               type="password"
               name="password"
               value={formData.password}
-              onChange={handleChange}
               onFocus={() => setShowKeyboard(true)}
               disabled={loading}
-              inputMode="numeric"
-              pattern="\d*"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:bg-gray-100"
+              readOnly
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:bg-gray-100 cursor-pointer"
               placeholder="••••••"
             />
           </div>

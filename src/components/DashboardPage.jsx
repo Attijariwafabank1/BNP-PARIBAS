@@ -11,18 +11,38 @@ import {
 } from 'lucide-react';
 
 export default function DashboardPage({ navigate }) {
-  const { user, logout, updateProfile } = useAuth();
+  const { user, logout, updateProfile, refreshUser } = useAuth();
   const [showBlockedModal, setShowBlockedModal] = useState(false);
   const [activeTab, setActiveTab] = useState('solde');
 
-  // Afficher la modal si le compte est bloqué au chargement
+  // ⚡ CORRECTION : Rafraîchir l'utilisateur au montage du composant
   useEffect(() => {
+    console.log('📊 DashboardPage monté');
+    
+    // Forcer le rafraîchissement depuis localStorage
+    if (refreshUser) {
+      const freshUser = refreshUser();
+      console.log('🔄 Utilisateur rafraîchi:', freshUser?.name, 'Solde:', freshUser?.balance);
+    }
+    
+    // Vérifier si le compte est bloqué
     if (user && user.isBlocked) {
       setShowBlockedModal(true);
     }
-  }, [user]);
+  }, []); // ⚡ Tableau vide = s'exécute une fois au montage
+
+  // ⚡ AJOUT : Surveiller les changements de user pour détecter les déconnexions
+  useEffect(() => {
+    console.log('👤 User dans Dashboard:', user?.name, 'Solde:', user?.balance);
+    
+    if (!user) {
+      console.warn('⚠️ Pas d\'utilisateur dans Dashboard, redirection...');
+      navigate('login');
+    }
+  }, [user, navigate]);
 
   const handleLogout = () => {
+    console.log('🚪 Déconnexion depuis Dashboard');
     logout();
     navigate('home');
   };
@@ -37,6 +57,7 @@ export default function DashboardPage({ navigate }) {
   };
 
   const handleTabClick = (tabId) => {
+    console.log('📍 Clic sur tab:', tabId);
     setActiveTab(tabId);
     
     // Pour l'instant, solde reste sur le dashboard
@@ -50,6 +71,18 @@ export default function DashboardPage({ navigate }) {
       navigate(tabId);
     }
   };
+
+  // ⚡ PROTECTION : Si pas de user, afficher un loader
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement de votre compte...</p>
+        </div>
+      </div>
+    );
+  }
 
   const balance = user?.balance || 0;
   const lastConnection = new Date().toLocaleDateString('fr-FR', {
@@ -85,7 +118,6 @@ export default function DashboardPage({ navigate }) {
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-emerald-600 rounded flex items-center justify-center">
-             
               <img src="images/logo bnp.jpeg" alt="" />
             </div>
             <span className="text-xl font-bold text-gray-800">BNP PARIBAS</span>
@@ -243,13 +275,16 @@ export default function DashboardPage({ navigate }) {
           <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-gray-800">Transactions récentes</h3>
-              <button className="text-emerald-600 font-medium hover:underline">
+              <button 
+                onClick={() => navigate('historique')}
+                className="text-emerald-600 font-medium hover:underline"
+              >
                 Voir l'historique
               </button>
             </div>
 
             <div className="space-y-4">
-              {user?.transactions?.map((transaction) => (
+              {user?.transactions?.slice(0, 5).map((transaction) => (
                 <div 
                   key={transaction.id}
                   className="flex items-center gap-4 p-4 hover:bg-gray-50 rounded-lg transition cursor-pointer"

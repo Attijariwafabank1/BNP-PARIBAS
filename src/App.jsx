@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CreditCard, Coins, Shield, Wallet, TrendingUp, Phone, Users, Gift, Menu, X } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Header from './components/Header';
@@ -16,6 +16,7 @@ import HistoriquePage from './components/HistoriquePage';
 import VirementPage from './components/VirementPage';
 import CartesPage from './components/CartesPage';
 import RIBPage from './components/RIBPage';
+import RecuPage from './components/RecuPage';
 // Nouvelles pages
 import VirementRapide from './components/VirementRapide';
 import PayerQR from './components/PayerQR';
@@ -28,17 +29,45 @@ function AppContent() {
   const { user, loading } = useAuth();
   const [currentPage, setCurrentPage] = useState('home');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [virementData, setVirementData] = useState(null);
+  
+  // ⚡ Utiliser useRef pour éviter les boucles infinies
+  const hasRedirectedToDashboard = useRef(false);
 
-  // Rediriger vers le dashboard si l'utilisateur est déjà connecté
+  // ✅ CORRECTION : Redirection initiale uniquement (une seule fois)
   useEffect(() => {
-    if (user && currentPage === 'home') {
+    // Rediriger vers dashboard seulement si :
+    // 1. L'utilisateur est connecté
+    // 2. On est sur la page home
+    // 3. On n'a pas encore redirigé
+    if (user && currentPage === 'home' && !hasRedirectedToDashboard.current) {
+      console.log('🏠 Redirection automatique vers dashboard');
       setCurrentPage('dashboard');
+      hasRedirectedToDashboard.current = true;
     }
-  }, [user]);
+    
+    // Si l'utilisateur se déconnecte, réinitialiser le flag
+    if (!user) {
+      hasRedirectedToDashboard.current = false;
+    }
+  }, [user, currentPage]);
 
   const navigate = (page) => {
+    console.log('🧭 Navigation vers:', page);
     setCurrentPage(page);
     setSidebarOpen(false);
+  };
+
+  // ⚡⚡⚡ CORRECTION CRITIQUE : Cette fonction doit SEULEMENT sauvegarder les données
+  // La navigation est gérée par VirementPage.jsx
+  const handleVirementSuccess = (data) => {
+    console.log('✅ App.jsx - Callback virement reçu');
+    console.log('📦 Données du virement:', data);
+    
+    // Sauvegarder les données dans le state
+    setVirementData(data);
+    
+    console.log('💾 Données sauvegardées dans App.jsx, état virementData mis à jour');
   };
 
   const menuItems = [
@@ -88,10 +117,26 @@ function AppContent() {
 
   // Page Virement
   if (currentPage === 'virement') {
-    return <VirementPage navigate={navigate} />;
+    return (
+      <VirementPage 
+        navigate={navigate} 
+        onVirementSuccess={handleVirementSuccess}
+      />
+    );
   }
 
-  // Page Cartes - ✅ CORRECTION ICI
+  // ⚡⚡⚡ Page Reçu - AVEC LOG DE DEBUG
+  if (currentPage === 'recu') {
+    console.log('📄 Affichage de RecuPage avec virementData:', virementData);
+    return (
+      <RecuPage 
+        navigate={navigate} 
+        virementData={virementData}
+      />
+    );
+  }
+
+  // Page Cartes
   if (currentPage === 'cartes') {
     return <CartesPage user={user} navigate={navigate} />;
   }

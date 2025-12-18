@@ -1,26 +1,36 @@
-// components/VirementPage.jsx
+// components/VirementPage.jsx - VERSION CORRIGÉE
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import emailjs from '@emailjs/browser';
 import { 
   ArrowLeft, Send, User, CreditCard, Euro, MessageSquare,
-  Wallet, Clock, ArrowLeftRight, FileText, Mail, Building2, AlertCircle, Loader2, Download, X
+  Wallet, Clock, ArrowLeftRight, FileText, Mail, Building2, AlertCircle, Loader2
 } from 'lucide-react';
 
 export default function VirementPage({ navigate, onVirementSuccess }) {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth(); // ⚡ Ajout de updateUser
   const [activeTab, setActiveTab] = useState('virement');
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  
   const [formData, setFormData] = useState({
-    beneficiary: '',
-    email: '',
+    beneficiaire: '',
     iban: '',
     bic: '',
-    amount: '',
-    message: ''
+    email: '',
+    montant: '',
+    motif: '',
   });
+
+  // ✅ GUARD : Vérifier que l'utilisateur est connecté
+  useEffect(() => {
+    console.log('🔒 Vérification utilisateur:', user);
+    if (!user) {
+      console.warn('⚠️ Pas d\'utilisateur connecté, redirection vers login');
+      navigate('login');
+    }
+  }, []);
 
   const menuItems = [
     { id: 'solde', icon: Wallet, label: 'Solde' },
@@ -31,6 +41,7 @@ export default function VirementPage({ navigate, onVirementSuccess }) {
   ];
 
   const handleTabClick = (tabId) => {
+    console.log('📍 Navigation vers:', tabId);
     setActiveTab(tabId);
     if (tabId === 'solde') {
       navigate('dashboard');
@@ -39,255 +50,40 @@ export default function VirementPage({ navigate, onVirementSuccess }) {
     }
   };
 
-  // Validation IBAN
   const validateIBAN = (iban) => {
-    // Supprimer les espaces
     const cleanIban = iban.replace(/\s/g, '');
-    
-    // Format général: 2 lettres (pays) + 2 chiffres (clé) + max 30 caractères alphanumériques
     const ibanRegex = /^[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}$/;
     
-    if (!ibanRegex.test(cleanIban)) {
-      return false;
-    }
+    if (!ibanRegex.test(cleanIban)) return false;
     
-    // Longueur spécifique selon le pays
     const countryLengths = {
-      'FR': 27, // France
-      'CI': 28, // Côte d'Ivoire
-      'BE': 16, // Belgique
-      'DE': 22, // Allemagne
-      'ES': 24, // Espagne
-      'IT': 27, // Italie
-      'GB': 22, // Royaume-Uni
+      'FR': 27, 'CI': 28, 'BE': 16, 'DE': 22, 
+      'ES': 24, 'IT': 27, 'GB': 22,
     };
     
     const country = cleanIban.substring(0, 2);
     const expectedLength = countryLengths[country];
     
-    if (expectedLength && cleanIban.length !== expectedLength) {
-      return false;
-    }
+    if (expectedLength && cleanIban.length !== expectedLength) return false;
     
     return true;
   };
 
-  // Validation BIC/SWIFT
   const validateBIC = (bic) => {
-    // Format BIC: 8 ou 11 caractères alphanumériques
-    // 4 lettres (code banque) + 2 lettres (code pays) + 2 caractères (localisation) + 3 caractères optionnels (code agence)
     const bicRegex = /^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/;
     const cleanBic = bic.replace(/\s/g, '').toUpperCase();
-    
     return bicRegex.test(cleanBic);
   };
 
-  // Validation Email
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
-  };
-
-  // Télécharger le reçu (image/impression)
-  const handleDownloadReceipt = () => {
-    if (!virementData) return;
-
-    // Créer un canvas pour générer le reçu
-    const canvas = document.createElement('canvas');
-    canvas.width = 800;
-    canvas.height = 1000;
-    const ctx = canvas.getContext('2d');
-
-    // Fond blanc
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Header vert
-    const gradient = ctx.createLinearGradient(0, 0, canvas.width, 100);
-    gradient.addColorStop(0, '#059669');
-    gradient.addColorStop(1, '#0d9488');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, 120);
-
-    // Logo BNP
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 24px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('BNP PARIBAS', canvas.width / 2, 45);
-
-    ctx.font = '18px Arial';
-    ctx.fillText('REÇU DE VIREMENT', canvas.width / 2, 75);
-
-    ctx.font = '14px Arial';
-    ctx.fillText('Confirmation de transaction', canvas.width / 2, 100);
-
-    // Badge succès
-    ctx.fillStyle = '#d1fae5';
-    ctx.fillRect(250, 140, 300, 50);
-    ctx.fillStyle = '#059669';
-    ctx.font = 'bold 18px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('✓ VIREMENT EFFECTUÉ', canvas.width / 2, 170);
-
-    // Référence
-    ctx.fillStyle = '#fef3c7';
-    ctx.fillRect(150, 210, 500, 60);
-    ctx.strokeStyle = '#fbbf24';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(150, 210, 500, 60);
-    
-    ctx.fillStyle = '#92400e';
-    ctx.font = '11px Arial';
-    ctx.fillText('RÉFÉRENCE DE TRANSACTION', canvas.width / 2, 230);
-    ctx.font = 'bold 16px Courier New';
-    ctx.fillText(virementData.reference, canvas.width / 2, 255);
-
-    // Montant
-    ctx.fillStyle = '#059669';
-    ctx.font = 'bold 42px Arial';
-    ctx.fillText(`${virementData.amount} €`, canvas.width / 2, 320);
-
-    // Ligne séparation
-    ctx.strokeStyle = '#e5e7eb';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(50, 350);
-    ctx.lineTo(750, 350);
-    ctx.stroke();
-
-    // Détails - Alignement gauche
-    ctx.textAlign = 'left';
-    let y = 390;
-
-    // Émetteur
-    ctx.fillStyle = '#6b7280';
-    ctx.font = '11px Arial';
-    ctx.fillText('ÉMETTEUR', 80, y);
-    ctx.fillStyle = '#1f2937';
-    ctx.font = 'bold 14px Arial';
-    ctx.fillText(virementData.senderName, 80, y + 20);
-    y += 50;
-
-    // Bénéficiaire
-    ctx.fillStyle = '#6b7280';
-    ctx.font = '11px Arial';
-    ctx.fillText('BÉNÉFICIAIRE', 80, y);
-    ctx.fillStyle = '#1f2937';
-    ctx.font = 'bold 14px Arial';
-    ctx.fillText(virementData.beneficiary, 80, y + 20);
-    y += 50;
-
-    // Email
-    ctx.fillStyle = '#6b7280';
-    ctx.font = '11px Arial';
-    ctx.fillText('EMAIL', 80, y);
-    ctx.fillStyle = '#1f2937';
-    ctx.font = '14px Arial';
-    ctx.fillText(virementData.email, 80, y + 20);
-    y += 50;
-
-    // IBAN
-    ctx.fillStyle = '#6b7280';
-    ctx.font = '11px Arial';
-    ctx.fillText('IBAN', 80, y);
-    ctx.fillStyle = '#1f2937';
-    ctx.font = '12px Courier New';
-    ctx.fillText(virementData.iban, 80, y + 20);
-    y += 50;
-
-    // BIC
-    ctx.fillStyle = '#6b7280';
-    ctx.font = '11px Arial';
-    ctx.fillText('CODE BIC/SWIFT', 80, y);
-    ctx.fillStyle = '#1f2937';
-    ctx.font = '12px Courier New';
-    ctx.fillText(virementData.bic, 80, y + 20);
-    y += 50;
-
-    // Date
-    ctx.fillStyle = '#6b7280';
-    ctx.font = '11px Arial';
-    ctx.fillText('DATE ET HEURE', 80, y);
-    ctx.fillStyle = '#1f2937';
-    ctx.font = '14px Arial';
-    ctx.fillText(virementData.date, 80, y + 20);
-    y += 50;
-
-    // Message si existe
-    if (virementData.message) {
-      ctx.fillStyle = '#6b7280';
-      ctx.font = '11px Arial';
-      ctx.fillText('MESSAGE', 80, y);
-      ctx.fillStyle = '#1f2937';
-      ctx.font = '12px Arial';
-      
-      // Découper le message en lignes si trop long
-      const maxWidth = 640;
-      const words = virementData.message.split(' ');
-      let line = '';
-      let lineY = y + 20;
-      
-      for (let n = 0; n < words.length; n++) {
-        const testLine = line + words[n] + ' ';
-        const metrics = ctx.measureText(testLine);
-        if (metrics.width > maxWidth && n > 0) {
-          ctx.fillText(line, 80, lineY);
-          line = words[n] + ' ';
-          lineY += 18;
-        } else {
-          line = testLine;
-        }
-      }
-      ctx.fillText(line, 80, lineY);
-      y = lineY + 30;
-    }
-
-    // Footer
-    y += 30;
-    ctx.strokeStyle = '#e5e7eb';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(50, y);
-    ctx.lineTo(750, y);
-    ctx.stroke();
-
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#6b7280';
-    ctx.font = '11px Arial';
-    y += 25;
-    ctx.fillText('Document généré le ' + new Date().toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }), canvas.width / 2, y);
-    
-    y += 20;
-    ctx.fillText('Ce document confirme l\'exécution de votre virement bancaire.', canvas.width / 2, y);
-    
-    y += 30;
-    ctx.font = '9px Arial';
-    ctx.fillText('Ce reçu est fourni à titre informatif. En cas de litige, seuls les documents officiels font foi.', canvas.width / 2, y);
-
-    // Convertir en image et télécharger
-    canvas.toBlob((blob) => {
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `Recu_Virement_${virementData.reference}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    });
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Effacer l'erreur du champ modifié
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -295,57 +91,58 @@ export default function VirementPage({ navigate, onVirementSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    console.log('🚀 === DÉBUT DU VIREMENT ===');
+    console.log('👤 User actuel:', user);
+    console.log('📝 FormData:', formData);
+    
     const newErrors = {};
 
-    // Validation du bénéficiaire
-    if (!formData.beneficiary.trim()) {
-      newErrors.beneficiary = 'Le nom du bénéficiaire est requis';
-    } else if (formData.beneficiary.trim().length < 3) {
-      newErrors.beneficiary = 'Le nom doit contenir au moins 3 caractères';
+    // Validations
+    if (!formData.beneficiaire.trim()) {
+      newErrors.beneficiaire = 'Le nom du bénéficiaire est requis';
+    } else if (formData.beneficiaire.trim().length < 3) {
+      newErrors.beneficiaire = 'Le nom doit contenir au moins 3 caractères';
     }
 
-    // Validation de l'email
     if (!formData.email.trim()) {
       newErrors.email = 'L\'email est requis';
     } else if (!validateEmail(formData.email)) {
       newErrors.email = 'Format d\'email invalide';
     }
 
-    // Validation de l'IBAN
     if (!formData.iban.trim()) {
       newErrors.iban = 'L\'IBAN est requis';
     } else if (!validateIBAN(formData.iban)) {
       newErrors.iban = 'Format d\'IBAN invalide';
     }
 
-    // Validation du BIC
     if (!formData.bic.trim()) {
       newErrors.bic = 'Le code BIC/SWIFT est requis';
     } else if (!validateBIC(formData.bic)) {
       newErrors.bic = 'Format de BIC/SWIFT invalide (8 ou 11 caractères)';
     }
 
-    // Validation du montant
-    const amount = parseFloat(formData.amount);
-    if (!formData.amount) {
-      newErrors.amount = 'Le montant est requis';
-    } else if (isNaN(amount) || amount <= 0) {
-      newErrors.amount = 'Le montant doit être supérieur à 0';
-    } else if (amount > (user?.balance || 0)) {
-      newErrors.amount = 'Solde insuffisant';
+    const montant = parseFloat(formData.montant);
+    if (!formData.montant) {
+      newErrors.montant = 'Le montant est requis';
+    } else if (isNaN(montant) || montant <= 0) {
+      newErrors.montant = 'Le montant doit être supérieur à 0';
+    } else if (montant > (user?.balance || 0)) {
+      newErrors.montant = 'Solde insuffisant';
     }
 
-    // Si des erreurs existent, les afficher
     if (Object.keys(newErrors).length > 0) {
+      console.log('❌ Erreurs de validation:', newErrors);
       setErrors(newErrors);
       return;
     }
 
-    // Envoi de l'email avec EmailJS
+    console.log('✅ Validation OK');
     setLoading(true);
 
     try {
-      // Générer une référence unique
+      // Générer les données
       const reference = `VIR${Date.now()}${Math.floor(Math.random() * 1000)}`;
       const transactionDate = new Date().toLocaleDateString('fr-FR', {
         day: '2-digit',
@@ -355,81 +152,149 @@ export default function VirementPage({ navigate, onVirementSuccess }) {
         minute: '2-digit'
       });
 
-      // Paramètres du template EmailJS
-      const templateParams = {
-        from_name: user?.name,
-        from_email: user?.email,
-        to_name: formData.beneficiary,
-        to_email: formData.email,
-        amount: amount.toFixed(2),
-        iban: formData.iban,
-        bic: formData.bic,
-        message: formData.message || 'Aucun message',
-        date: transactionDate,
-        reference: reference
+      console.log('📄 Référence générée:', reference);
+
+      // ⚡ ÉTAPE CRITIQUE : Mettre à jour le solde AVANT tout
+      const newBalance = user.balance - montant;
+      console.log('💰 Nouveau solde calculé:', newBalance);
+
+      // Créer la nouvelle transaction
+      const newTransaction = {
+        id: Date.now(),
+        type: 'Virement sortant',
+        date: new Date().toLocaleDateString('fr-FR', { 
+          day: '2-digit', 
+          month: 'short', 
+          year: 'numeric' 
+        }),
+        reference: formData.iban.substring(0, 4) + ' *** ' + formData.iban.slice(-3),
+        amount: montant,
+        isCredit: false
       };
 
-      // Configuration EmailJS - Remplacez par vos vrais identifiants
-      const SERVICE_ID = 'YOUR_SERVICE_ID';
-      const TEMPLATE_ID = 'YOUR_TEMPLATE_ID';
-      const PUBLIC_KEY = 'YOUR_PUBLIC_KEY';
+      // Mettre à jour l'utilisateur avec le nouveau solde ET la transaction
+      const updatedUser = {
+        ...user,
+        balance: newBalance,
+        transactions: [newTransaction, ...(user.transactions || [])]
+      };
 
-      // Vérifier si les identifiants sont configurés
-      if (SERVICE_ID === 'YOUR_SERVICE_ID' || TEMPLATE_ID === 'YOUR_TEMPLATE_ID' || PUBLIC_KEY === 'YOUR_PUBLIC_KEY') {
-        // Mode démo sans EmailJS
-        console.log('Mode démo - EmailJS non configuré');
-        console.log('Paramètres du virement:', templateParams);
-        
-        // Simuler un délai d'envoi
-        await new Promise(resolve => setTimeout(resolve, 1500));
-      } else {
-        // Envoi réel avec EmailJS
-        await emailjs.send(
-          SERVICE_ID,
-          TEMPLATE_ID,
-          templateParams,
-          PUBLIC_KEY
-        );
+      console.log('📝 Utilisateur mis à jour:', updatedUser);
+
+      // ⚡ SAUVEGARDER dans le contexte (via AuthContext)
+      if (updateUser) {
+        updateUser(updatedUser);
+        console.log('✅ Contexte mis à jour');
       }
 
-      // Sauvegarder les données du virement pour le reçu
-      const virementData = {
+      // ⚡ SAUVEGARDER dans localStorage
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      console.log('✅ localStorage mis à jour');
+
+      // Préparer les données du virement pour le reçu
+      const newVirementData = {
         reference: reference,
-        senderName: user?.name,
-        beneficiary: formData.beneficiary,
+        senderName: user?.name || user?.username || 'Client',
+        beneficiary: formData.beneficiaire,
         email: formData.email,
         iban: formData.iban,
         bic: formData.bic,
-        amount: amount.toFixed(2),
-        message: formData.message,
+        amount: montant.toFixed(2),
+        message: formData.motif || '',
         date: transactionDate
       };
 
-      // Naviguer vers la page de reçu
-      if (onVirementSuccess) {
-        onVirementSuccess(virementData);
+      console.log('💾 Données du virement pour le reçu:', newVirementData);
+
+      // Envoi EmailJS (optionnel, non bloquant)
+      try {
+        const templateParams = {
+          beneficiaire_nom: formData.beneficiaire,
+          beneficiaire_email: formData.email,
+          emetteur_nom: newVirementData.senderName,
+          montant: `${montant.toLocaleString('fr-FR', {minimumFractionDigits: 2})} €`,
+          reference: reference,
+          date: new Date().toLocaleDateString('fr-FR'),
+          heure: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+          motif: formData.motif || 'Virement bancaire',
+          iban: formData.iban,
+          bic: formData.bic,
+          frais: '0.00 €',
+          total: `${montant.toLocaleString('fr-FR', {minimumFractionDigits: 2})} €`
+        };
+
+        console.log('📧 Tentative d\'envoi email...');
+        
+        await emailjs.send(
+          'service_6lnids6',
+          'template_kszelhf',
+          templateParams,
+          's0N4AR3th7wPYUFyy'
+        );
+        
+        console.log('✅ Email envoyé avec succès');
+      } catch (emailError) {
+        console.warn('⚠️ Erreur EmailJS (non bloquante):', emailError.message);
       }
-      navigate('recu');
-      
+
       // Réinitialiser le formulaire
+      console.log('🧹 Réinitialisation du formulaire');
       setFormData({
-        beneficiary: '',
-        email: '',
+        beneficiaire: '',
         iban: '',
         bic: '',
-        amount: '',
-        message: ''
+        email: '',
+        montant: '',
+        motif: '',
       });
 
+      // Callback vers App.jsx (avec les données du reçu)
+      console.log('🔄 Exécution du callback...');
+      if (onVirementSuccess && typeof onVirementSuccess === 'function') {
+        try {
+          onVirementSuccess(newVirementData);
+          console.log('✅ Callback exécuté avec succès');
+        } catch (callbackError) {
+          console.error('❌ Erreur dans le callback:', callbackError);
+        }
+      }
+
+      // Petit délai pour garantir la synchronisation
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      console.log('🚀 Navigation vers la page reçu...');
+      console.log('=== ÉTAT FINAL ===');
+      console.log('User dans contexte:', updatedUser);
+      console.log('User dans localStorage:', localStorage.getItem('user'));
+      
+      navigate('recu');
+      
+      console.log('✅ === FIN DU VIREMENT (succès) ===');
+
     } catch (error) {
-      console.error('Erreur lors de l\'envoi:', error);
-      alert('❌ Erreur lors de l\'envoi de la notification. Veuillez réessayer.');
+      console.error('❌ === ERREUR CRITIQUE ===');
+      console.error('Type:', error.name);
+      console.error('Message:', error.message);
+      console.error('Stack:', error.stack);
+      alert(`❌ Erreur lors du virement: ${error.message}\n\nVeuillez réessayer.`);
     } finally {
       setLoading(false);
+      console.log('🏁 Loading terminé');
     }
   };
 
-  // Bénéficiaires récents
+  // Si pas d'utilisateur, ne rien afficher
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirection...</p>
+        </div>
+      </div>
+    );
+  }
+
   const recentBeneficiaries = [
     { 
       id: 1, 
@@ -497,12 +362,12 @@ export default function VirementPage({ navigate, onVirementSuccess }) {
               <button
                 key={beneficiary.id}
                 onClick={() => setFormData({ 
-                  beneficiary: beneficiary.name,
+                  beneficiaire: beneficiary.name,
                   email: beneficiary.email,
                   iban: beneficiary.iban,
                   bic: beneficiary.bic,
-                  amount: '',
-                  message: ''
+                  montant: '',
+                  motif: ''
                 })}
                 className="flex flex-col items-center gap-2 min-w-80px hover:opacity-80 transition"
               >
@@ -515,7 +380,7 @@ export default function VirementPage({ navigate, onVirementSuccess }) {
           </div>
         </div>
 
-        {/* Formulaire de virement */}
+        {/* Formulaire */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="text-lg font-bold text-gray-800 mb-6">Nouveau virement</h3>
           
@@ -528,18 +393,18 @@ export default function VirementPage({ navigate, onVirementSuccess }) {
               </label>
               <input
                 type="text"
-                name="beneficiary"
-                value={formData.beneficiary}
+                name="beneficiaire"
+                value={formData.beneficiaire}
                 onChange={handleChange}
                 placeholder="Nom du bénéficiaire"
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
-                  errors.beneficiary ? 'border-red-500' : 'border-gray-300'
+                  errors.beneficiaire ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
-              {errors.beneficiary && (
+              {errors.beneficiaire && (
                 <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
                   <AlertCircle size={14} />
-                  {errors.beneficiary}
+                  {errors.beneficiaire}
                 </p>
               )}
             </div>
@@ -590,12 +455,9 @@ export default function VirementPage({ navigate, onVirementSuccess }) {
                   {errors.iban}
                 </p>
               )}
-              <p className="mt-1 text-xs text-gray-500">
-                Format: 2 lettres (pays) + 2 chiffres + code bancaire
-              </p>
             </div>
 
-            {/* BIC/SWIFT */}
+            {/* BIC */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Building2 className="inline mr-2" size={16} />
@@ -618,9 +480,6 @@ export default function VirementPage({ navigate, onVirementSuccess }) {
                   {errors.bic}
                 </p>
               )}
-              <p className="mt-1 text-xs text-gray-500">
-                8 ou 11 caractères (ex: BNPAFRPPXXX)
-              </p>
             </div>
 
             {/* Montant */}
@@ -631,21 +490,21 @@ export default function VirementPage({ navigate, onVirementSuccess }) {
               </label>
               <input
                 type="number"
-                name="amount"
-                value={formData.amount}
+                name="montant"
+                value={formData.montant}
                 onChange={handleChange}
                 placeholder="0.00"
                 step="0.01"
                 min="0"
                 max={user?.balance || 0}
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
-                  errors.amount ? 'border-red-500' : 'border-gray-300'
+                  errors.montant ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
-              {errors.amount && (
+              {errors.montant && (
                 <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
                   <AlertCircle size={14} />
-                  {errors.amount}
+                  {errors.montant}
                 </p>
               )}
               <p className="mt-1 text-xs text-gray-500">
@@ -660,8 +519,8 @@ export default function VirementPage({ navigate, onVirementSuccess }) {
                 Message (optionnel)
               </label>
               <textarea
-                name="message"
-                value={formData.message}
+                name="motif"
+                value={formData.motif}
                 onChange={handleChange}
                 placeholder="Motif du virement"
                 rows="3"
@@ -669,7 +528,7 @@ export default function VirementPage({ navigate, onVirementSuccess }) {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
               />
               <p className="mt-1 text-xs text-gray-500 text-right">
-                {formData.message.length}/140
+                {formData.motif.length}/140
               </p>
             </div>
 
@@ -698,7 +557,7 @@ export default function VirementPage({ navigate, onVirementSuccess }) {
         </div>
       </main>
 
-      {/* Navigation inférieure */}
+      {/* Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-40">
         <div className="max-w-4xl mx-auto px-2">
           <div className="flex items-center justify-around">

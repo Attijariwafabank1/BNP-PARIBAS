@@ -6,20 +6,14 @@ export default function VirementRapide({ user, navigate }) {
   const [amount, setAmount] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Vérifier si l'utilisateur a des bénéficiaires (pour nouveaux inscrits = 0)
-  const hasBeneficiaries = user?.virementRapide > 0;
-  
-  // Bénéficiaires favoris - VIDES pour nouveaux inscrits
-  const beneficiaries = hasBeneficiaries ? [
-    { id: 1, name: 'Sophie Martin', iban: 'FR76 3000 4000 0300 0345 6789 012', lastAmount: 150, favorite: true },
-    { id: 2, name: 'Pierre Dubois', iban: 'FR45 2004 1000 0100 0234 5678 901', lastAmount: 500, favorite: true },
-    { id: 3, name: 'Isabelle Moreau', iban: 'FR12 3000 2004 0000 0567 8901 234', lastAmount: 250, favorite: false },
-  ] : [];
+  // Récupérer les bénéficiaires depuis l'objet user
+  const beneficiaries = user?.beneficiaires || [];
+  const hasBeneficiaries = beneficiaries.length > 0;
 
   // Montants rapides
   const quickAmounts = [50, 100, 200, 500, 1000];
 
-  // Derniers virements - VIDES pour nouveaux inscrits
+  // Derniers virements
   const recentTransfers = hasBeneficiaries ? [
     { id: 1, name: 'Sophie Martin', amount: 150, date: '15 Déc 2024' },
     { id: 2, name: 'Pierre Dubois', amount: 500, date: '12 Déc 2024' },
