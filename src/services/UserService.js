@@ -3,7 +3,7 @@
 
 const DEV_MODE = true;
 const STORAGE_KEY = 'bnp_users_data';
-const DATA_VERSION = 2; // ⚡ INCRÉMENTER CE NUMÉRO À CHAQUE MODIFICATION
+const DATA_VERSION = 4; // ⚡ INCRÉMENTER CE NUMÉRO À CHAQUE MODIFICATION
 
 class UserService {
   constructor() {
@@ -174,7 +174,7 @@ class UserService {
           }
         ],
         accounts: [
-          { id: 1, type: 'Compte Courant', number: 'N°*******2284', balance: 35000.00, icon: 'wallet' },
+          { id: 1, type: 'Compte Courant', number: 'N°*******2284', balance: 800000.00, icon: 'wallet' },
           { id: 2, type: 'Livret A', number: 'N°*******5462', balance: 30000.40, icon: 'piggybank' },
           { id: 3, type: 'Plan Épargne', number: 'N°*******8891', balance: 40000.17, icon: 'trending' }
         ],
