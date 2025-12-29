@@ -1,7 +1,7 @@
 // components/BlockedAccountModal.jsx
 
 import React, { useState } from 'react';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, X, Info } from 'lucide-react';
 
 export default function BlockedAccountModal({ user, onClose, onUnlock }) {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -52,6 +52,19 @@ export default function BlockedAccountModal({ user, onClose, onUnlock }) {
             </p>
           </div>
 
+          {/* Raison du blocage */}
+          {user.blockReason && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div className="flex gap-3">
+                <Info className="text-blue-600  mt-0.5" size={20} />
+                <div>
+                  <p className="text-sm font-medium text-blue-900 mb-1">Raison du blocage :</p>
+                  <p className="text-sm text-blue-800">{user.blockReason}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Frais de déblocage */}
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
             <div className="flex items-center justify-between">
@@ -69,7 +82,7 @@ export default function BlockedAccountModal({ user, onClose, onUnlock }) {
           <button
             onClick={handleUnlock}
             disabled={isProcessing}
-            className="w-full bg-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white py-3 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isProcessing ? (
               <>
